@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { setCredentials } from '../../slices/authSlice.JS';
+import { setCredentials } from '../../slices/authSlice.js';
 import { toast } from 'react-toastify';
 import { BiLoaderAlt } from 'react-icons/bi';
 import { TiShoppingBag } from 'react-icons/ti';
