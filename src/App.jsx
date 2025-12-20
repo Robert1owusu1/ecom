@@ -4,7 +4,7 @@ import AOS from 'aos';
 import "aos/dist/aos.css";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import CartPage from "./Pges/Cartpage/CartPge.jsx"
+import CartPage from "./Pages/Cartpage/CartPge.jsx"
 import PrivateRoute from './components/privateRoutes/PivateRoute.jsx';
 import AdminRoute from './components/privateRoutes/AdminRoutes.jsx';
 import Navbar from './components/Navbar/Navbar';
@@ -18,17 +18,17 @@ import Testimonials from './components/Testimonials/Testimonials.jsx';
 import Footer from './components/Footer/Footer.jsx';
 import Login from "./components/login/Login.jsx"
 import Register from './components/login/Register.jsx';
-import AllProducts from './Pges/AllProducts/AllProducts.jsx';
-import CheckoutPage from "./Pges/CheckoutPage/checkout.jsx";
-import UserProfile from "./Pges/UserProfile/UserProfile"
+import AllProducts from './Pages/AllProducts/AllProducts.jsx';
+import CheckoutPage from "./Pages/CheckoutPage/checkout.jsx";
+import UserProfile from "./Pages/UserProfile/UserProfile"
 import AdminDashboard from './AdminDashboard/AdminDashboard.jsx';
-import Aboutus from "./Pges/About_Us/AboutsUs";
-import ContactUs from './Pges/About_Us/ContactUs'
-import ProductDetails from './Pges/AllProducts/productDetails.jsx';
+import Aboutus from "./Pages/About_Us/AboutsUs";
+import ContactUs from './Pages/About_Us/ContactUs'
+import ProductDetails from './Pages/AllProducts/productDetails.jsx';
 import EmailVerification from './components/EmailVerification/EmailVerification';
-import OAuthCallback from './Pges/Auth/OAuthCallback';
-import ForgotPassword from './Pges/Auth/ForgotPassword.jsx';
-import ResetPassword from './Pges/Auth/ResetPassword.jsx';
+import OAuthCallback from './Pages/Auth/OAuthCallback';
+import ForgotPassword from './Pages/Auth/ForgotPassword.jsx';
+import ResetPassword from './Pages/Auth/ResetPassword.jsx';
 
 const App = () => {
   useEffect(() => {
