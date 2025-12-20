@@ -8,7 +8,7 @@ import Gucci from "../../assets/brands/gucci.jpg";
 import Zara from "../../assets/brands/zara.jpg";
 import HnM from "../../assets/brands/hm.png";
 import Uniqlo from "../../assets/brands/uniqlo.png";
-import Levi from "../../assets/brands/levis.png";
+import Levi from "../../assets/brands/Levis.png";
 import Lacoste from "../../assets/brands/lacoste.png";
 import Supreme from "../../assets/brands/supreme.png";
 
