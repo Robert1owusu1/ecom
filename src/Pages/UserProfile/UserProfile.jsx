@@ -6,7 +6,7 @@ import { BiLoaderAlt } from "react-icons/bi";
 import { useSelector, useDispatch } from 'react-redux';
 import { useLogoutMutation, useUpdateProfileMutation } from '../../slices/usersApiSlice';
 import { useUploadProfilePictureMutation, useDeleteProfilePictureMutation } from '../../slices/profileApiSlice';
-import { logout, setCredentials } from '../../slices/authSlice.js';
+import { logout, setCredentials } from '../../slices/authSlice';
 import { toast } from 'react-toastify';
 import { useGetMyOrdersQuery } from '../../slices/ordersApiSlice';
 
