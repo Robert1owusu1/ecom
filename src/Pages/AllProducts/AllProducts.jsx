@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { FaStar, FaHeart, FaEye, FaShoppingCart, FaFilter, FaTh, FaList, FaChevronDown, FaTimes, FaPalette, FaPlus } from 'react-icons/fa';
 import { useCart } from "../../Context/CartContext";
-import Brands from "../../Pges/AllProducts/bands";
+import Brands from "../../Pages/AllProducts/bands";
 import { useGetProductsQuery } from '../../slices/productsApiSlice';
 import { Link, useSearchParams } from 'react-router-dom';
 

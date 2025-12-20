@@ -4,9 +4,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { FaHome, FaBox, FaShoppingCart, FaUsers, FaChartLine, FaCog } from 'react-icons/fa';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
-import ProductsPage from '../Pges/adminDashboardPages/products/ProductsPage';
-import OrdersPage from '../Pges/adminDashboardPages/Orders/OrdersPage';
-import CustomersPage from '../Pges/adminDashboardPages/Customers/CustomersPage';
+import ProductsPage from '../Pages/adminDashboardPages/products/ProductsPage';
+import OrdersPage from '../Pages/adminDashboardPages/Orders/OrdersPage';
+import CustomersPage from '../Pages/adminDashboardPages/Customers/CustomersPage';
 import { useGetAllOrdersQuery } from '../slices/ordersApiSlice';
 import { useGetSettingsQuery, useUpdateSettingsMutation } from '../slices/settingsApiSlice';
 
