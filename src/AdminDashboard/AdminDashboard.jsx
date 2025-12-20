@@ -41,7 +41,10 @@ const AdminDashboard = () => {
   const { data: apiSettings } = useGetSettingsQuery();
   const [updateSettingsMutation] = useUpdateSettingsMutation();
 
-  const orders = Array.isArray(ordersResponse) ? ordersResponse : (ordersResponse.orders || []);
+  // FIX: Wrap orders in useMemo to prevent dependency changes on every render
+  const orders = useMemo(() => {
+    return Array.isArray(ordersResponse) ? ordersResponse : (ordersResponse.orders || []);
+  }, [ordersResponse]);
 
   // Update settings when API data loads
   useEffect(() => {
