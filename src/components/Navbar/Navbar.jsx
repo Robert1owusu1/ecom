@@ -12,7 +12,7 @@ import axios from 'axios';
 import { useCart } from "../../Context/CartContext";
 import CartDrawer from "../../components/CartDrawer/CartDrawer";
 import { useLogoutMutation } from '../../slices/usersApiSlice';
-import { logout } from '../../slices/authSlice.js';
+import { logout } from '../../slices/authSlice';
 import { toast } from 'react-toastify';
 
 // ⚙️ Configuration

@@ -9,7 +9,7 @@ import { MdOutlineMailOutline } from "react-icons/md";
 import { RiLockPasswordFill } from "react-icons/ri";
 import { BiLoaderAlt } from "react-icons/bi";
 import { useLoginMutation } from "../../slices/usersApiSlice";
-import { setCredentials } from "../../slices/authSlice.JS";
+import { setCredentials } from "../../slices/authSlice";
 import { toast } from 'react-toastify';
 import Footer from "../../components/Footer/Footer";
 

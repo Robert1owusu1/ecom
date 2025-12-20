@@ -9,7 +9,7 @@ import { TiShoppingBag } from "react-icons/ti";
 import Footer from "../../components/Footer/Footer";
 import { useRegisterMutation } from "../../slices/usersApiSlice";
 import { toast } from "react-toastify";
-import { setCredentials } from "../../slices/authSlice.JS";
+import { setCredentials } from "../../slices/authSlice";
 import { useDispatch } from "react-redux";
 
 
