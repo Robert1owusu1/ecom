@@ -7,12 +7,13 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import cookieParser from 'cookie-parser';
 import compression from 'compression';
-import session from 'express-session';          // ⭐ NEW
-import passport from 'passport';                 // ⭐ NEW
-import { configurePassport } from './config/passPort.js';  // ⭐ NEW
+import session from 'express-session';
+import passport from 'passport';
+import { configurePassport } from './config/passPort.js';
 
 // Database
 import pool from './config/db.js';
+import initDatabase from './config/initdatabase.js';  // ⭐ NEW - Database initialization
 
 // Middleware
 import { setupSecurity } from './midleware/securityMiddleware.js';
@@ -27,7 +28,7 @@ import paymentRoutes from './routes/paymentRoutes.js';
 import uploadRoutes from './routes/uploadRoute.js';
 import settingRoutes from './routes/settingRoutes.js';
 import profileRoutes from './routes/profileRoutes.js';
-import authRoutes from './routes/authRoutes.js';  // ⭐ NEW - OAuth routes
+import authRoutes from './routes/authRoutes.js';
 import { startCleanupSchedule } from './utils/cleanupJobs.js';
 
 // Setup __dirname for ES modules
@@ -37,19 +38,25 @@ const __dirname = path.dirname(__filename);
 const port = process.env.PORT || 5000;
 
 // ============================================
-// DATABASE CONNECTION TEST
+// DATABASE CONNECTION & INITIALIZATION
 // ============================================
-pool.getConnection()
-  .then((connection) => {
+const initializeDatabase = async () => {
+  try {
+    // Test database connection
+    const connection = await pool.getConnection();
     console.log('✅ MySQL Connection Established');
     connection.release();
-  })
-  .catch((err) => {
-    console.error('❌ MySQL Connection Failed:', err.message);
-    process.exit(1);
-  });
-
-startCleanupSchedule();
+    
+    // Initialize database tables
+    console.log('🔄 Initializing database tables...');
+    await initDatabase();
+    console.log('✅ Database tables initialized successfully');
+    
+  } catch (err) {
+    console.error('❌ Database initialization failed:', err.message);
+    throw err;
+  }
+};
 
 // ============================================
 // EXPRESS APP INITIALIZATION
@@ -69,7 +76,7 @@ setupSecurity(app);
 // 3. Cookie Parser - MUST be first for JWT authentication
 app.use(cookieParser());
 
-// ⭐ 4. Session middleware (required for OAuth flow)
+// 4. Session middleware (required for OAuth flow)
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-session-secret-change-in-production',
   resave: false,
@@ -80,7 +87,7 @@ app.use(session({
   }
 }));
 
-// ⭐ 5. Initialize Passport for OAuth
+// 5. Initialize Passport for OAuth
 app.use(passport.initialize());
 app.use(passport.session());
 configurePassport();
@@ -129,7 +136,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/settings', settingRoutes);
 app.use('/api/profile', profileRoutes);
-app.use('/api/auth', authRoutes);  // ⭐ NEW - OAuth routes (Google, Facebook)
+app.use('/api/auth', authRoutes);
 
 // ============================================
 // ERROR HANDLING - Must be LAST
@@ -139,54 +146,72 @@ app.use(notFound);
 app.use(errorHandeler);
 
 // ============================================
-// START SERVER
+// START SERVER WITH DATABASE INITIALIZATION
 // ============================================
 
-const server = app.listen(port, () => {
-  console.log('='.repeat(50));
-  console.log(`✅ Server running in ${process.env.NODE_ENV || 'development'} mode`);
-  console.log(`🚀 Server listening on port ${port}`);
-  console.log(`🌐 API: http://localhost:${port}`);
-  console.log(`❤️  Health: http://localhost:${port}/health`);
-  console.log('='.repeat(50));
-  console.log(`🗄️  Database: MySQL`);
-  console.log(`📁 Static files served from: ${path.join(__dirname, 'uploads')}`);
-  console.log(`🍪 Cookie parser enabled`);
-  console.log(`🔒 Security middleware active (Helmet, XSS, HPP)`);
-  console.log(`⚡ Compression enabled`);
-  console.log(`🚦 Rate limiting active`);
-  console.log(`📤 Upload route registered before body parser`);
-  console.log(`📦 Body parser limit: 50mb`);
-  console.log(`🖼️  Profile picture uploads enabled`);
-  console.log(`🔐 OAuth routes enabled (Google, Facebook)`);  // ⭐ NEW
-  console.log('='.repeat(50));
-});
+const startServer = async () => {
+  try {
+    // Initialize database first
+    await initializeDatabase();
+    
+    // Start cleanup jobs
+    startCleanupSchedule();
+    
+    // Start the server
+    const server = app.listen(port, () => {
+      console.log('='.repeat(50));
+      console.log(`✅ Server running in ${process.env.NODE_ENV || 'development'} mode`);
+      console.log(`🚀 Server listening on port ${port}`);
+      console.log(`🌐 API: http://localhost:${port}`);
+      console.log(`❤️  Health: http://localhost:${port}/health`);
+      console.log('='.repeat(50));
+      console.log(`🗄️  Database: MySQL - Tables Initialized`);
+      console.log(`📁 Static files served from: ${path.join(__dirname, 'uploads')}`);
+      console.log(`🍪 Cookie parser enabled`);
+      console.log(`🔒 Security middleware active (Helmet, XSS, HPP)`);
+      console.log(`⚡ Compression enabled`);
+      console.log(`🚦 Rate limiting active`);
+      console.log(`📤 Upload route registered before body parser`);
+      console.log(`📦 Body parser limit: 50mb`);
+      console.log(`🖼️  Profile picture uploads enabled`);
+      console.log(`🔐 OAuth routes enabled (Google, Facebook)`);
+      console.log('='.repeat(50));
+    });
 
-// ============================================
-// GRACEFUL SHUTDOWN HANDLERS
-// ============================================
+    // ============================================
+    // GRACEFUL SHUTDOWN HANDLERS
+    // ============================================
 
-process.on('unhandledRejection', (err) => {
-  console.error('🚨 Unhandled Promise Rejection:', err.message);
-  console.error(err.stack);
-  server.close(() => {
-    console.log('💤 Server closed due to unhandled rejection');
+    process.on('unhandledRejection', (err) => {
+      console.error('🚨 Unhandled Promise Rejection:', err.message);
+      console.error(err.stack);
+      server.close(() => {
+        console.log('💤 Server closed due to unhandled rejection');
+        process.exit(1);
+      });
+    });
+
+    process.on('uncaughtException', (err) => {
+      console.error('🚨 Uncaught Exception:', err.message);
+      console.error(err.stack);
+      process.exit(1);
+    });
+
+    process.on('SIGTERM', () => {
+      console.log('👋 SIGTERM received, closing server gracefully...');
+      server.close(() => {
+        console.log('💤 Server closed');
+        process.exit(0);
+      });
+    });
+
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
     process.exit(1);
-  });
-});
+  }
+};
 
-process.on('uncaughtException', (err) => {
-  console.error('🚨 Uncaught Exception:', err.message);
-  console.error(err.stack);
-  process.exit(1);
-});
-
-process.on('SIGTERM', () => {
-  console.log('👋 SIGTERM received, closing server gracefully...');
-  server.close(() => {
-    console.log('💤 Server closed');
-    process.exit(0);
-  });
-});
+// Start the server
+startServer();
 
 export default app;
