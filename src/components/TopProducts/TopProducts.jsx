@@ -4,6 +4,7 @@ import { FaStar, FaTshirt, FaClock, FaHeart, FaEye, FaShoppingCart, FaTags, FaFi
 import { useCart } from "../../Context/CartContext";
 import { Link } from "react-router-dom";
 import axios from "axios";
+import { Base_URL, PRODUCTS_URL } from "../../constant";
 
 // ⭐ FIXED: Make sure /api is included
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -24,7 +25,7 @@ const TopProducts = ({ handleOrderPopup }) => {
         setError(null);
         
         // ⭐ FIXED: Correct URL construction
-        const url = `${API_URL}/products/featured`;
+        const url = `${Base_URL}${PRODUCTS_URL}/featured`;
         console.log('🔍 Fetching featured products from:', url);
         
         const response = await axios.get(url, {
