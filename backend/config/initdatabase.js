@@ -32,7 +32,7 @@ const initDatabase = async () => {
         country VARCHAR(100),
         role ENUM('customer','admin') DEFAULT 'customer',
         isActive TINYINT(1) DEFAULT 1,
-        is_email_verified TINYINT(1) DEFAULT 0,
+        isEmailVerified TINYINT(1) DEFAULT 0,
         emailVerificationToken VARCHAR(255),
         emailVerificationExpires DATETIME,
         emailVerifiedAt DATETIME,

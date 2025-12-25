@@ -5,7 +5,7 @@ export const cleanupUnverifiedUsers = async () => {
   try {
     const [result] = await pool.execute(
       `DELETE FROM users 
-       WHERE is_email_verified = false 
+       WHERE isEmailVerified = false 
        AND created_at < DATE_SUB(NOW(), INTERVAL 7 DAY)`
     );
     
