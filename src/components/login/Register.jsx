@@ -408,7 +408,7 @@ const handleSubmit = async (e) => {
     toast.error(errorMessage);
   }
 };
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://ecom-production-4f73.up.railway.app';
 
 
   // OAuth handler - unchanged

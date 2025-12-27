@@ -6,7 +6,7 @@ import { useCart } from "../../Context/CartContext";
 import axios from "axios";
 
 // ⭐ FIXED: Make sure /api is included
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://ecom-production-4f73.up.railway.app/api';
 
 const TrendingProducts = ({ handleOrderPopup }) => {
   const { addToCart } = useCart();

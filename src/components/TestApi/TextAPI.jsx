@@ -6,7 +6,7 @@ const TestAPI = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/health') // test endpoint
+    fetch('https://ecom-production-4f73.up.railway.app/api/health') // test endpoint
       .then((res) => {
         if (!res.ok) throw new Error('Network response was not ok');
         return res.json();

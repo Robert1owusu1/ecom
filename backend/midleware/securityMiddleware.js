@@ -45,7 +45,7 @@ export const setupSecurity = (app) => {
   app.use((req, res, next) => {
     const allowedOrigins = process.env.FRONTEND_URL 
       ? process.env.FRONTEND_URL.split(',')
-      : ['http://localhost:3000'];
+      : ['https://ecom-production-4f73.up.railway.app/'];
     
     const origin = req.headers.origin;
     

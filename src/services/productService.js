@@ -1,7 +1,7 @@
 // FILE: frontend/src/services/productService.js
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://ecom-production-4f73.up.railway.app/api';
 
 // Create axios instance with default config
 const axiosInstance = axios.create({
