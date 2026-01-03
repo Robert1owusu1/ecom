@@ -13,11 +13,21 @@ import { configurePassport } from './config/passPort.js';
 
 // Database
 import pool from './config/db.js';
-import initDatabase from './config/initdatabase.js';  // ⭐ NEW - Database initialization
+import initDatabase from './config/initdatabase.js';
 
 // Middleware
-import { setupSecurity } from './midleware/securityMiddleware.js';
-import { apiLimiter } from './midleware/rateLimitMiddleware.js';
+import { 
+  setupSecurity, 
+  sanitizeInput, 
+  preventSQLInjection 
+} from './midleware/securityMiddleware.js';
+import { 
+  apiLimiter, 
+  authLimiter, 
+  uploadLimiter, 
+  orderLimiter
+  // ✅ REMOVED: passwordResetLimiter (not used yet)
+} from './midleware/rateLimitMiddleware.js';
 import { errorHandeler, notFound } from './midleware/errorMidleware.js';
 
 // Routes
@@ -42,12 +52,10 @@ const port = process.env.PORT || 5000;
 // ============================================
 const initializeDatabase = async () => {
   try {
-    // Test database connection
     const connection = await pool.getConnection();
     console.log('✅ MySQL Connection Established');
     connection.release();
     
-    // Initialize database tables
     console.log('🔄 Initializing database tables...');
     await initDatabase();
     console.log('✅ Database tables initialized successfully');
@@ -63,6 +71,10 @@ const initializeDatabase = async () => {
 // ============================================
 const app = express();
 
+// ✅ CRITICAL: Enable trust proxy for Railway/Heroku/Vercel
+// This MUST be set BEFORE any middleware that uses req.ip
+app.set('trust proxy', 1);
+
 // ============================================
 // MIDDLEWARE (ORDER IS CRITICAL!)
 // ============================================
@@ -70,10 +82,10 @@ const app = express();
 // 1. Enable gzip compression for responses
 app.use(compression());
 
-// 2. Setup security middleware - Helmet, XSS protection, HPP, CORS
+// 2. Setup security middleware - CORS, Helmet, HPP
 setupSecurity(app);
 
-// 3. Cookie Parser - MUST be first for JWT authentication
+// 3. Cookie Parser - MUST be before authentication
 app.use(cookieParser());
 
 // 4. Session middleware (required for OAuth flow)
@@ -82,8 +94,10 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+    httpOnly: true, // Prevent XSS attacks
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: 'lax' // CSRF protection
   }
 }));
 
@@ -92,24 +106,31 @@ app.use(passport.initialize());
 app.use(passport.session());
 configurePassport();
 
-// 6. Upload routes - MUST come BEFORE body parsers
-app.use('/api/upload', uploadRoutes);
+// 6. Upload routes with rate limiting - MUST come BEFORE body parsers
+app.use('/api/upload', uploadLimiter, uploadRoutes);
 
 // 7. Body parser middleware - applied AFTER upload routes
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // 8. Serve static files from uploads directory
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+const uploadsPath = path.join(__dirname, 'uploads');
+app.use('/uploads', express.static(uploadsPath));
 
-// 9. Apply general rate limiting to all API routes
+// 9. Apply input sanitization to ALL routes (XSS protection)
+app.use(sanitizeInput);
+
+// 10. Apply SQL injection prevention to API routes
+app.use('/api/', preventSQLInjection);
+
+// 11. Apply general rate limiting to all API routes
 app.use('/api/', apiLimiter);
 
 // ============================================
 // ROUTES
 // ============================================
 
-// Health check endpoint
+// Health check endpoint (no rate limiting)
 app.get('/health', (req, res) => {
   res.status(200).json({ 
     status: 'OK',
@@ -126,17 +147,17 @@ app.get('/health', (req, res) => {
 
 // Root route
 app.get('/', (req, res) => {
-  res.send('API is running..');
+  res.send('API is running...');
 });
 
-// API Routes
+// API Routes with specific rate limiters
 app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/orders', orderRoutes);
+app.use('/api/orders', orderLimiter, orderRoutes); // ✅ Order-specific rate limiting
 app.use('/api/payments', paymentRoutes);
 app.use('/api/settings', settingRoutes);
 app.use('/api/profile', profileRoutes);
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authLimiter, authRoutes); // ✅ Auth-specific rate limiting
 
 // ============================================
 // ERROR HANDLING - Must be LAST
@@ -156,25 +177,30 @@ const startServer = async () => {
     
     // Start cleanup jobs
     startCleanupSchedule();
+    console.log('✅ Cleanup scheduler started');
     
     // Start the server
     const server = app.listen(port, () => {
       console.log('='.repeat(50));
       console.log(`✅ Server running in ${process.env.NODE_ENV || 'development'} mode`);
       console.log(`🚀 Server listening on port ${port}`);
-      console.log(`🌐 API: http://localhost:${port}`);
-      console.log(`❤️  Health: http://localhost:${port}/health`);
+      
+      // Show Railway URL if available
+      const publicUrl = process.env.RAILWAY_PUBLIC_DOMAIN 
+        ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+        : `http://localhost:${port}`;
+      
+      console.log(`🌐 API: ${publicUrl}`);
+      console.log(`❤️  Health: ${publicUrl}/health`);
       console.log('='.repeat(50));
-      console.log(`🗄️  Database: MySQL - Tables Initialized`);
-      console.log(`📁 Static files served from: ${path.join(__dirname, 'uploads')}`);
-      console.log(`🍪 Cookie parser enabled`);
-      console.log(`🔒 Security middleware active (Helmet, XSS, HPP)`);
-      console.log(`⚡ Compression enabled`);
-      console.log(`🚦 Rate limiting active`);
-      console.log(`📤 Upload route registered before body parser`);
-      console.log(`📦 Body parser limit: 50mb`);
-      console.log(`🖼️  Profile picture uploads enabled`);
-      console.log(`🔐 OAuth routes enabled (Google, Facebook)`);
+      console.log('🔐 Security:');
+      console.log('   - CORS enabled');
+      console.log('   - Helmet (XSS, HSTS, CSP)');
+      console.log('   - HPP protection');
+      console.log('   - Rate limiting');
+      console.log('   - SQL injection prevention');
+      console.log('   - Input sanitization');
+      console.log('   - Trust proxy enabled');
       console.log('='.repeat(50));
     });
 

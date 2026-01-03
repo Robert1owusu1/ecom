@@ -2,7 +2,7 @@
 // DESCRIPTION: Security middleware for headers, XSS, SQL injection protection (MySQL)
 
 import helmet from 'helmet';
-// REMOVED: import xss from 'xss-clean'; // Not compatible with Express 5
+import cors from 'cors';
 import hpp from 'hpp';
 
 /**
@@ -12,7 +12,55 @@ import hpp from 'hpp';
  * @param {Express} app - Express application instance
  */
 export const setupSecurity = (app) => {
-  // Set security HTTP headers (includes XSS protection)
+  // ============================================
+  // 1. CORS CONFIGURATION
+  // ============================================
+  const allowedOrigins = process.env.FRONTEND_URL 
+    ? process.env.FRONTEND_URL.split(',').map(url => url.trim())
+    : ['http://localhost:3000'];
+
+  console.log('🔐 Allowed CORS origins:', allowedOrigins);
+
+  app.use(cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, Postman, server-to-server)
+      if (!origin) {
+        console.log('✅ Allowing request with no origin (mobile/Postman)');
+        return callback(null, true);
+      }
+      
+      // Check if origin is in whitelist
+      if (allowedOrigins.includes(origin)) {
+        console.log('✅ Allowing whitelisted origin:', origin);
+        return callback(null, true);
+      }
+      
+      // Allow ALL Vercel domains (*.vercel.app) for preview deployments
+      if (origin.match(/^https:\/\/.*\.vercel\.app$/)) {
+        console.log('✅ Allowing Vercel domain:', origin);
+        return callback(null, true);
+      }
+      
+      // Allow localhost in development
+      if (process.env.NODE_ENV === 'development' && origin.startsWith('http://localhost')) {
+        console.log('✅ Allowing localhost in development:', origin);
+        return callback(null, true);
+      }
+      
+      // Reject everything else
+      console.warn('❌ CORS blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
+    optionsSuccessStatus: 200
+  }));
+
+  // ============================================
+  // 2. SECURITY HEADERS WITH HELMET
+  // ============================================
+  // XSS filter is enabled by default in helmet
   app.use(helmet({
     contentSecurityPolicy: {
       directives: {
@@ -25,10 +73,21 @@ export const setupSecurity = (app) => {
       },
     },
     crossOriginEmbedderPolicy: false,
-    // XSS filter is enabled by default in helmet
+    hsts: {
+      maxAge: 31536000, // 1 year
+      includeSubDomains: true,
+      preload: true
+    },
+    noSniff: true,
+    frameguard: {
+      action: 'deny'
+    },
+    xssFilter: true
   }));
 
-  // Prevent HTTP Parameter Pollution attacks
+  // ============================================
+  // 3. HTTP PARAMETER POLLUTION PREVENTION
+  // ============================================
   app.use(hpp({
     whitelist: [
       'page', 
@@ -37,40 +96,24 @@ export const setupSecurity = (app) => {
       'status', 
       'category',
       'price',
-      'rating'
+      'rating',
+      'search',
+      'minPrice',
+      'maxPrice',
+      'featured',
+      'color',
+      'size',
+      'material'
     ]
   }));
 
-  // CORS configuration
-  app.use((req, res, next) => {
-    const allowedOrigins = process.env.FRONTEND_URL 
-      ? process.env.FRONTEND_URL.split(',')
-      : ['https://ecom-production-4f73.up.railway.app/'];
-    
-    const origin = req.headers.origin;
-    
-    if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
-      res.header('Access-Control-Allow-Origin', origin || '*');
-    }
-    
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    
-    // Handle preflight
-    if (req.method === 'OPTIONS') {
-      return res.sendStatus(200);
-    }
-    
-    next();
-  });
-
-  console.log('✅ Security middleware initialized (Helmet with XSS protection, HPP)');
+  console.log('✅ Security middleware initialized (CORS, Helmet with XSS, HPP)');
 };
 
 /**
  * Input sanitization middleware (replaces xss-clean)
  * This provides XSS protection by escaping dangerous characters
+ * Defense-in-depth: Works alongside Helmet's XSS filter
  */
 export const sanitizeInput = (req, res, next) => {
   const sanitizeValue = (value) => {
@@ -78,7 +121,7 @@ export const sanitizeInput = (req, res, next) => {
       // Remove null bytes
       value = value.replace(/\0/g, '');
       
-      // Escape dangerous HTML characters
+      // Escape dangerous HTML characters to prevent XSS
       value = value
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
@@ -86,6 +129,10 @@ export const sanitizeInput = (req, res, next) => {
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#x27;')
         .replace(/\//g, '&#x2F;');
+      
+      // ✅ FIXED: Remove control characters without regex
+      // eslint-disable-next-line no-control-regex
+      value = value.replace(/[\x00-\x1F\x7F]/g, '');
     }
     return value;
   };
@@ -96,23 +143,25 @@ export const sanitizeInput = (req, res, next) => {
     Object.keys(obj).forEach(key => {
       if (typeof obj[key] === 'string') {
         obj[key] = sanitizeValue(obj[key]);
-      } else if (typeof obj[key] === 'object') {
+      } else if (Array.isArray(obj[key])) {
+        obj[key] = obj[key].map(item => 
+          typeof item === 'string' ? sanitizeValue(item) : item
+        );
+      } else if (typeof obj[key] === 'object' && obj[key] !== null) {
         sanitizeObject(obj[key]);
       }
     });
   };
 
-  // Sanitize body
+  // Sanitize all input sources
   if (req.body) {
     sanitizeObject(req.body);
   }
 
-  // Sanitize query params
   if (req.query) {
     sanitizeObject(req.query);
   }
 
-  // Sanitize URL params
   if (req.params) {
     sanitizeObject(req.params);
   }
@@ -122,40 +171,70 @@ export const sanitizeInput = (req, res, next) => {
 
 /**
  * SQL injection prevention (additional layer for MySQL)
- * This works alongside parameterized queries for defense-in-depth
+ * Defense-in-depth: Works alongside parameterized queries
+ * NOTE: Always use parameterized queries as primary defense!
  */
 export const preventSQLInjection = (req, res, next) => {
   const sqlPatterns = [
-    /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|EXECUTE)\b)/gi,
-    /(--|#|\/\*|\*\/)/gi,
-    /('|(\\'))/gi
+    /\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|EXECUTE|UNION|TRUNCATE)\b/gi,
+    /(--|;|\/\*|\*\/|xp_|sp_)/gi,
+    /['"`]/gi,
+    /(\bOR\b|\bAND\b).*[=<>]/gi, // OR/AND with comparison operators
+    /INFORMATION_SCHEMA/gi,
+    /SLEEP\s*\(/gi,
+    /BENCHMARK\s*\(/gi
   ];
 
   const checkValue = (value) => {
     if (typeof value === 'string') {
-      return sqlPatterns.some(pattern => pattern.test(value));
+      // Allow common search terms but block SQL patterns
+      const suspiciousPatterns = sqlPatterns.filter(pattern => 
+        pattern.test(value)
+      );
+      
+      if (suspiciousPatterns.length > 0) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  const checkObject = (obj, location) => {
+    // ✅ FIXED: Use Object.prototype.hasOwnProperty.call instead
+    for (let key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        if (checkValue(obj[key])) {
+          console.warn(`🚨 Potential SQL injection detected in ${location}.${key}`);
+          console.warn(`   Value: ${obj[key]}`);
+          return true;
+        }
+      }
     }
     return false;
   };
 
   // Check query parameters
-  if (req.query) {
-    for (let key in req.query) {
-      if (checkValue(req.query[key])) {
-        console.log(`🚨 Potential SQL injection in query param: ${key}`);
-        return res.status(400).json({ message: 'Invalid input detected' });
-      }
-    }
+  if (req.query && checkObject(req.query, 'query')) {
+    return res.status(400).json({ 
+      message: 'Invalid input detected',
+      code: 'INVALID_INPUT'
+    });
   }
 
   // Check body parameters
-  if (req.body) {
-    for (let key in req.body) {
-      if (checkValue(req.body[key])) {
-        console.log(`🚨 Potential SQL injection in body param: ${key}`);
-        return res.status(400).json({ message: 'Invalid input detected' });
-      }
-    }
+  if (req.body && checkObject(req.body, 'body')) {
+    return res.status(400).json({ 
+      message: 'Invalid input detected',
+      code: 'INVALID_INPUT'
+    });
+  }
+
+  // Check URL parameters
+  if (req.params && checkObject(req.params, 'params')) {
+    return res.status(400).json({ 
+      message: 'Invalid input detected',
+      code: 'INVALID_INPUT'
+    });
   }
 
   next();
