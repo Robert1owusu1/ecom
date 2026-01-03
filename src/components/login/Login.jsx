@@ -229,10 +229,10 @@ const Login = () => {
     // Redirect to backend OAuth endpoint
     switch (provider) {
       case 'google':
-        window.location.href = `${API_BASE_URL}/auth/google`;
+        window.location.href = `${API_BASE_URL}/api/auth/google`;
         break;
       case 'facebook':
-        window.location.href = `${API_BASE_URL}/auth/facebook`;
+        window.location.href = `${API_BASE_URL}/api/auth/facebook`;
         break;
       case 'apple':
         // Apple Sign In not implemented yet

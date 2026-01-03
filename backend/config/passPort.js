@@ -1,4 +1,4 @@
-// config/passport.js
+// FILE: config/passport.js (UPDATED)
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { Strategy as FacebookStrategy } from 'passport-facebook';
@@ -83,16 +83,27 @@ export const configurePassport = () => {
   // GOOGLE STRATEGY
   // ============================================
   if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    // ✅ FIXED: Build proper callback URL
+    const baseURL = process.env.RAILWAY_PUBLIC_DOMAIN 
+      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+      : process.env.OAUTH_CALLBACK_URL || 'http://localhost:5000';
+    
+    const googleCallbackURL = `${baseURL}/api/auth/google/callback`;
+    
+    console.log('🔐 Google OAuth Callback URL:', googleCallbackURL);
+
     passport.use(new GoogleStrategy({
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: `${process.env.OAUTH_CALLBACK_URL}/api/auth/google/callback`,
+      callbackURL: googleCallbackURL, // ✅ Use full URL
       scope: ['profile', 'email']
     }, async (accessToken, refreshToken, profile, done) => {
       try {
+        console.log('✅ Google OAuth callback received for:', profile.emails[0].value);
         const user = await findOrCreateOAuthUser('google', profile);
         return done(null, user);
       } catch (error) {
+        console.error('❌ Google OAuth error:', error);
         return done(error, null);
       }
     }));
@@ -105,16 +116,27 @@ export const configurePassport = () => {
   // FACEBOOK STRATEGY
   // ============================================
   if (process.env.FACEBOOK_APP_ID && process.env.FACEBOOK_APP_SECRET) {
+    // ✅ FIXED: Build proper callback URL
+    const baseURL = process.env.RAILWAY_PUBLIC_DOMAIN 
+      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+      : process.env.OAUTH_CALLBACK_URL || 'http://localhost:5000';
+    
+    const facebookCallbackURL = `${baseURL}/api/auth/facebook/callback`;
+    
+    console.log('🔐 Facebook OAuth Callback URL:', facebookCallbackURL);
+
     passport.use(new FacebookStrategy({
       clientID: process.env.FACEBOOK_APP_ID,
       clientSecret: process.env.FACEBOOK_APP_SECRET,
-      callbackURL: `${process.env.OAUTH_CALLBACK_URL}/api/auth/facebook/callback`,
+      callbackURL: facebookCallbackURL, // ✅ Use full URL
       profileFields: ['id', 'emails', 'name', 'displayName', 'photos']
     }, async (accessToken, refreshToken, profile, done) => {
       try {
+        console.log('✅ Facebook OAuth callback received');
         const user = await findOrCreateOAuthUser('facebook', profile);
         return done(null, user);
       } catch (error) {
+        console.error('❌ Facebook OAuth error:', error);
         return done(error, null);
       }
     }));
@@ -123,7 +145,7 @@ export const configurePassport = () => {
     console.log('⚠️ Facebook OAuth not configured (missing credentials)');
   }
 
-  // Serialize/Deserialize (for session-based auth, optional)
+  // Serialize/Deserialize (for session-based auth)
   passport.serializeUser((user, done) => done(null, user.id));
   passport.deserializeUser(async (id, done) => {
     try {
