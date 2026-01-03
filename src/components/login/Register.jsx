@@ -418,10 +418,10 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://ecom-production-4f
     // Redirect to backend OAuth endpoint
     switch (provider) {
       case 'google':
-        window.location.href = `${API_BASE_URL}/api/auth/google`;
+        window.location.href = `${API_BASE_URL}/auth/google`;
         break;
       case 'facebook':
-        window.location.href = `${API_BASE_URL}/api/auth/facebook`;
+        window.location.href = `${API_BASE_URL}/auth/facebook`;
         break;
       case 'apple':
         // Apple Sign In not implemented yet
