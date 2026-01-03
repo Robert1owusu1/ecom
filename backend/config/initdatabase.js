@@ -21,6 +21,7 @@ const initDatabase = async () => {
         id INT AUTO_INCREMENT PRIMARY KEY,
         firstName VARCHAR(100) NOT NULL,
         lastName VARCHAR(100) NOT NULL,
+        profileImage VARCHAR(500),
         email VARCHAR(255) NOT NULL UNIQUE,
         googleId VARCHAR(255) UNIQUE,
         password VARCHAR(255) NOT NULL,
