@@ -229,7 +229,7 @@ const Login = () => {
     // Redirect to backend OAuth endpoint
     switch (provider) {
       case 'google':
-        window.location.href = `${API_BASE_URL}/api/auth/google`;
+        window.location.href = `${API_BASE_URL}/auth/google`;
         break;
       case 'facebook':
         window.location.href = `${API_BASE_URL}/api/auth/facebook`;
