@@ -97,8 +97,9 @@ app.use(session({
     secure: process.env.NODE_ENV === 'production', // HTTPS only in production
     httpOnly: true, // Prevent XSS attacks
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: 'lax' // CSRF protection
-  }
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // ✅ FIXED: 'none' for cross-domain in production
+  },
+  proxy: true // ✅ CRITICAL: Trust the reverse proxy
 }));
 
 // 5. Initialize Passport for OAuth
@@ -201,6 +202,7 @@ const startServer = async () => {
       console.log('   - SQL injection prevention');
       console.log('   - Input sanitization');
       console.log('   - Trust proxy enabled');
+      console.log('   - Cross-domain cookies (sameSite: none)');
       console.log('='.repeat(50));
     });
 
