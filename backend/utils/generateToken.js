@@ -1,4 +1,4 @@
-// utils/generateToken.js - COMPLETE VERSION WITH REMEMBER ME
+// utils/generateToken.js - FIXED FOR CROSS-DOMAIN (Vercel + Railway)
 import jwt from 'jsonwebtoken';
 
 /**
@@ -24,16 +24,19 @@ const generateToken = (res, userId, rememberMe = false) => {
     ? 30 * 24 * 60 * 60 * 1000  // 30 days in milliseconds
     : 7 * 24 * 60 * 60 * 1000;   // 7 days in milliseconds
 
-  // Set JWT as HTTP-Only cookie
+  // ✅ FIXED: Cookie configuration for cross-domain (Vercel frontend + Railway backend)
+  const isProduction = process.env.NODE_ENV === 'production';
+  
   res.cookie('jwt', token, {
     httpOnly: true,                                    // Prevents XSS attacks (client-side JavaScript cannot access)
-    secure: process.env.NODE_ENV === 'production',    // HTTPS only in production
-    sameSite: 'strict',                                // Prevents CSRF attacks
+    secure: isProduction,                              // HTTPS only in production
+    sameSite: isProduction ? 'none' : 'lax',          // ✅ CRITICAL: 'none' for cross-domain in production
     maxAge: maxAge,                                    // Cookie expiration time
     path: '/'                                          // Cookie available for entire domain
   });
 
   console.log(`✅ Token generated for user ${userId} (Remember Me: ${rememberMe}, Expires: ${rememberMe ? '30 days' : '7 days'})`);
+  console.log(`🍪 Cookie settings: secure=${isProduction}, sameSite=${isProduction ? 'none' : 'lax'}`);
   
   return token;
 };
