@@ -1,6 +1,6 @@
 // middleware/authMiddleware.js
 import jwt from 'jsonwebtoken';
-import asyncHandler from './asyncHandler.js'; // ✅ Fixed typo
+import asyncHandler from './asyncHandller.js'; 
 import pool from '../config/db.js'; // ✅ Use MySQL pool
 
 /**
