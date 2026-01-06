@@ -18,7 +18,7 @@ import {
     resendOTP,
     getVerificationStatus
 } from '../controllers/userController.js';
-import { protect, admin } from "../midleware/authMiddleware.js";
+import { protect, admin } from "../middleware/authMiddleware.js";
 
 // ============================================
 // PUBLIC ROUTES (No Authentication Required)

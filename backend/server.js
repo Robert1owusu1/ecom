@@ -20,15 +20,15 @@ import {
   setupSecurity, 
   sanitizeInput, 
   preventSQLInjection 
-} from './midleware/securityMiddleware.js';
+} from './middleware/securityMiddleware.js';
 import { 
   apiLimiter, 
   authLimiter, 
   uploadLimiter, 
   orderLimiter
   // ✅ REMOVED: passwordResetLimiter (not used yet)
-} from './midleware/rateLimitMiddleware.js';
-import { errorHandeler, notFound } from './midleware/errorMidleware.js';
+} from './middleware/rateLimitMiddleware.js';
+import { errorHandeler, notFound } from './middleware/errorMidleware.js';
 
 // Routes
 import productRoutes from './routes/productRoutes.js';

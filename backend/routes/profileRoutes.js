@@ -3,7 +3,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { protect } from '../midleware/authMiddleware.js';
+import { protect } from '../middleware/authMiddleware.js';
 import User from '../models/usersModel.js';
 
 const router = express.Router();

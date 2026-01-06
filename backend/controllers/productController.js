@@ -1,5 +1,5 @@
 // FILE: backend/controllers/productController.js
-import asyncHandler from "../midleware/asyncHandller.js";
+import asyncHandler from "../middleware/asyncHandller.js";
 import Product from "../models/productModel.js";
 
 // @desc    Fetch all products with optional filters

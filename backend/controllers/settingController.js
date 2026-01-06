@@ -2,7 +2,7 @@
 // DESCRIPTION: Controller functions for settings API endpoints
 
 import Setting from '../models/settingModel.js';
-import { clearCache } from '../midleware/cacheMiddleware.js';
+import { clearCache } from '../middleware/cacheMiddleware.js';
 
 // @desc    Get all settings
 // @route   GET /api/settings

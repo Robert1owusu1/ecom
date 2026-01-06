@@ -5,7 +5,7 @@ import express from "express";
 const router = express.Router();
 
 // Your existing imports (keeping the typo path for now)
-import { protect, admin } from "../midleware/authMiddleware.js";
+import { protect, admin } from "../middleware/authMiddleware.js";
 
 // Your existing controller functions
 import {
@@ -27,8 +27,8 @@ import {
 } from "../controllers/orderController.js";
 
 // NEW: Import middleware for caching and rate limiting
-import { cacheMiddleware } from "../midleware/cacheMiddleware.js";
-import { apiLimiter } from "../midleware/rateLimitMiddleware.js";
+import { cacheMiddleware } from "../middleware/cacheMiddleware.js";
+import { apiLimiter } from "../middleware/rateLimitMiddleware.js";
 
 // ============================================
 // APPLY RATE LIMITING TO ALL ORDER ROUTES

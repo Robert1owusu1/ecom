@@ -1,6 +1,6 @@
 import express from 'express';
-import upload from '../midleware/uploadMidleware.js';
-import { protect, admin } from '../midleware/authMiddleware.js';
+import upload from '../middleware/uploadMidleware.js';
+import { protect, admin } from '../middleware/authMiddleware.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
