@@ -1,7 +1,7 @@
 // routes/authRoutes.js
 import express from 'express';
 import passport from 'passport';
-import { generateToken } from '../config/passport.js'; // ✅ Fixed import path
+import { generateToken } from '../config/passPort.js';
 
 const router = express.Router();
 
