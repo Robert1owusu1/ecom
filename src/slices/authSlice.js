@@ -1,3 +1,4 @@
+// slices/authSlice.js
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
@@ -11,46 +12,17 @@ const authSlice = createSlice({
     initialState,
     reducers: {
         setCredentials: (state, action) => {
-            // Handle different backend response structures
-            let userInfo;
+            // Store entire user data including token
+            state.userInfo = action.payload;
+            localStorage.setItem('userInfo', JSON.stringify(action.payload));
             
-            // If backend returns { token, id, firstName, email, role, isAdmin }
-            if (action.payload.id || action.payload._id) {
-                const { token, ...userData } = action.payload;
-                userInfo = userData;
-                
-                // ✅ Convert role to isAdmin for consistency (fallback if backend doesn't send it)
-                if (userData.role && !userData.isAdmin) {
-                    userInfo.isAdmin = userData.role === 'admin';
-                }
-            } 
-            // If backend returns { token, user: { id, firstName, email, role, isAdmin } }
-            else if (action.payload.user) {
-                userInfo = action.payload.user;
-                
-                // ✅ Convert role to isAdmin for consistency (fallback if backend doesn't send it)
-                if (userInfo.role && !userInfo.isAdmin) {
-                    userInfo.isAdmin = userInfo.role === 'admin';
-                }
-            }
-            // Fallback - remove only token
-            else {
-                const { token, ...userData } = action.payload;
-                userInfo = userData;
-                
-                // ✅ Convert role to isAdmin for consistency (fallback if backend doesn't send it)
-                if (userData.role && !userData.isAdmin) {
-                    userInfo.isAdmin = userData.role === 'admin';
-                }
-            }
-            
-            state.userInfo = userInfo;
-            localStorage.setItem('userInfo', JSON.stringify(userInfo));
-            
-            // Debug log - remove after testing
-            console.log('✅ Stored userInfo:', userInfo);
-            console.log('✅ isAdmin:', userInfo.isAdmin);
-            console.log('✅ role:', userInfo.role);
+            console.log('✅ User credentials stored:', {
+                id: action.payload.id,
+                email: action.payload.email,
+                role: action.payload.role,
+                isAdmin: action.payload.isAdmin,
+                hasToken: !!action.payload.token
+            });
         },
 
         logout: (state) => {

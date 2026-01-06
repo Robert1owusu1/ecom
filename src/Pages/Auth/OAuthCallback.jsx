@@ -12,7 +12,7 @@ const OAuthCallback = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const [status, setStatus] = useState('processing'); // processing, success, error
+  const [status, setStatus] = useState('processing');
   const [message, setMessage] = useState('Completing sign in...');
 
   useEffect(() => {
@@ -42,7 +42,9 @@ const OAuthCallback = () => {
         if (success === 'true' && userDataParam) {
           const userData = JSON.parse(decodeURIComponent(userDataParam));
           
-          // Store credentials in Redux
+          console.log('📦 OAuth user data received:', userData);
+          
+          // Store credentials in Redux (includes token)
           dispatch(setCredentials(userData));
           
           setStatus('success');
@@ -66,7 +68,7 @@ const OAuthCallback = () => {
         setTimeout(() => navigate('/login'), 3000);
 
       } catch (err) {
-        console.error('OAuth callback error:', err);
+        console.error('❌ OAuth callback error:', err);
         setStatus('error');
         setMessage('Failed to process authentication');
         toast.error('Authentication failed');

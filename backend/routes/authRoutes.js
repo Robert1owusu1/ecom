@@ -1,11 +1,10 @@
 // routes/authRoutes.js
 import express from 'express';
 import passport from 'passport';
-import { generateToken } from '../config/passPort.js';
+import { generateToken } from '../config/passport.js';
 
 const router = express.Router();
 
-// Helper: Handle OAuth callback success
 const handleOAuthSuccess = (req, res) => {
   try {
     const user = req.user;
@@ -15,10 +14,8 @@ const handleOAuthSuccess = (req, res) => {
       return res.redirect(`${process.env.FRONTEND_URL}/login?error=no_user`);
     }
     
-    // ✅ Pass res and user.id (MySQL uses 'id', not '_id')
     const token = generateToken(res, user.id);
     
-    // Build user data for frontend
     const userData = {
       id: user.id,
       firstName: user.firstName,
@@ -40,7 +37,6 @@ const handleOAuthSuccess = (req, res) => {
   }
 };
 
-// GOOGLE OAUTH ROUTES
 router.get('/google', 
   passport.authenticate('google', { 
     scope: ['profile', 'email'],
@@ -56,7 +52,6 @@ router.get('/google/callback',
   handleOAuthSuccess
 );
 
-// FACEBOOK OAUTH ROUTES
 router.get('/facebook',
   passport.authenticate('facebook', { 
     scope: ['email', 'public_profile'],
@@ -72,31 +67,11 @@ router.get('/facebook/callback',
   handleOAuthSuccess
 );
 
-// APPLE OAUTH ROUTES
-router.get('/apple', (req, res) => {
-  res.status(501).json({ 
-    message: 'Apple Sign In not yet implemented',
-    info: 'Requires Apple Developer Account and additional configuration'
-  });
-});
-
-// OAUTH STATUS CHECK
-router.get('/status', (req, res) => {
-  res.json({
-    providers: {
-      google: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
-      facebook: !!(process.env.FACEBOOK_APP_ID && process.env.FACEBOOK_APP_SECRET),
-      apple: false
-    }
-  });
-});
-
-// LOGOUT ROUTE
 router.post('/logout', (req, res) => {
   res.cookie('jwt', '', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    secure: true,
+    sameSite: 'none',
     expires: new Date(0)
   });
   

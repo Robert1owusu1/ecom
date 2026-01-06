@@ -1,4 +1,4 @@
-// config/passport.js (UPDATED)
+// config/passport.js
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { Strategy as FacebookStrategy } from 'passport-facebook';
@@ -66,10 +66,10 @@ const findOrCreateOAuthUser = async (provider, profile) => {
   }
 };
 
-// ✅ FIXED: Generate JWT token and set cookie
+// Generate JWT token and set cookie
 export const generateToken = (res, userId) => {
   const token = jwt.sign(
-    { id: userId }, // ✅ Changed from "userId" to "id"
+    { id: userId },
     process.env.JWT_SECRET,
     { expiresIn: '30d' }
   );
@@ -77,9 +77,10 @@ export const generateToken = (res, userId) => {
   // Set HTTP-only cookie
   res.cookie('jwt', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    secure: true,
+    sameSite: 'none',
+    maxAge: 30 * 24 * 60 * 60 * 1000,
+    path: '/'
   });
 
   return token;
@@ -88,9 +89,6 @@ export const generateToken = (res, userId) => {
 // Configure Passport strategies
 export const configurePassport = () => {
   
-  // ============================================
-  // GOOGLE STRATEGY
-  // ============================================
   if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     const baseURL = process.env.RAILWAY_PUBLIC_DOMAIN 
       ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
@@ -116,13 +114,8 @@ export const configurePassport = () => {
       }
     }));
     console.log('✅ Google OAuth configured');
-  } else {
-    console.log('⚠️ Google OAuth not configured (missing credentials)');
   }
 
-  // ============================================
-  // FACEBOOK STRATEGY
-  // ============================================
   if (process.env.FACEBOOK_APP_ID && process.env.FACEBOOK_APP_SECRET) {
     const baseURL = process.env.RAILWAY_PUBLIC_DOMAIN 
       ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
@@ -148,11 +141,8 @@ export const configurePassport = () => {
       }
     }));
     console.log('✅ Facebook OAuth configured');
-  } else {
-    console.log('⚠️ Facebook OAuth not configured (missing credentials)');
   }
 
-  // Serialize/Deserialize
   passport.serializeUser((user, done) => done(null, user.id));
   passport.deserializeUser(async (id, done) => {
     try {
