@@ -94,7 +94,7 @@ export const configurePassport = () => {
       ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
       : process.env.OAUTH_CALLBACK_URL || 'http://localhost:5000';
     
-    const googleCallbackURL = `${baseURL}/api/auth/google/callback`;
+    const googleCallbackURL = `${baseURL}/auth/google/callback`;
     
     console.log('🔐 Google OAuth Callback URL:', googleCallbackURL);
 
