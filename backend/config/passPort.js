@@ -1,4 +1,4 @@
-// FILE: config/passport.js (UPDATED)
+// config/passport.js (UPDATED)
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { Strategy as FacebookStrategy } from 'passport-facebook';
@@ -11,7 +11,7 @@ const findOrCreateOAuthUser = async (provider, profile) => {
   try {
     connection = await pool.getConnection();
     
-    const providerId = `${provider}Id`; // googleId or facebookId
+    const providerId = `${provider}Id`;
     const email = profile.emails?.[0]?.value?.toLowerCase();
     
     // 1. Check if user exists by provider ID
@@ -33,7 +33,6 @@ const findOrCreateOAuthUser = async (provider, profile) => {
       );
       
       if (existingByEmail.length > 0) {
-        // Link OAuth provider to existing account
         await connection.execute(
           `UPDATE users SET ${providerId} = ?, isEmailVerified = 1 WHERE id = ?`,
           [profile.id, existingByEmail[0].id]
@@ -67,13 +66,23 @@ const findOrCreateOAuthUser = async (provider, profile) => {
   }
 };
 
-// Generate JWT token for user
-export const generateToken = (user) => {
-  return jwt.sign(
-    { userId: user.id, role: user.role },
+// ✅ FIXED: Generate JWT token and set cookie
+export const generateToken = (res, userId) => {
+  const token = jwt.sign(
+    { id: userId }, // ✅ Changed from "userId" to "id"
     process.env.JWT_SECRET,
     { expiresIn: '30d' }
   );
+
+  // Set HTTP-only cookie
+  res.cookie('jwt', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+  });
+
+  return token;
 };
 
 // Configure Passport strategies
@@ -83,7 +92,6 @@ export const configurePassport = () => {
   // GOOGLE STRATEGY
   // ============================================
   if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
-    // ✅ FIXED: Build proper callback URL
     const baseURL = process.env.RAILWAY_PUBLIC_DOMAIN 
       ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
       : process.env.OAUTH_CALLBACK_URL || 'http://localhost:5000';
@@ -95,7 +103,7 @@ export const configurePassport = () => {
     passport.use(new GoogleStrategy({
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: googleCallbackURL, // ✅ Use full URL
+      callbackURL: googleCallbackURL,
       scope: ['profile', 'email']
     }, async (accessToken, refreshToken, profile, done) => {
       try {
@@ -116,7 +124,6 @@ export const configurePassport = () => {
   // FACEBOOK STRATEGY
   // ============================================
   if (process.env.FACEBOOK_APP_ID && process.env.FACEBOOK_APP_SECRET) {
-    // ✅ FIXED: Build proper callback URL
     const baseURL = process.env.RAILWAY_PUBLIC_DOMAIN 
       ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
       : process.env.OAUTH_CALLBACK_URL || 'http://localhost:5000';
@@ -128,7 +135,7 @@ export const configurePassport = () => {
     passport.use(new FacebookStrategy({
       clientID: process.env.FACEBOOK_APP_ID,
       clientSecret: process.env.FACEBOOK_APP_SECRET,
-      callbackURL: facebookCallbackURL, // ✅ Use full URL
+      callbackURL: facebookCallbackURL,
       profileFields: ['id', 'emails', 'name', 'displayName', 'photos']
     }, async (accessToken, refreshToken, profile, done) => {
       try {
@@ -145,7 +152,7 @@ export const configurePassport = () => {
     console.log('⚠️ Facebook OAuth not configured (missing credentials)');
   }
 
-  // Serialize/Deserialize (for session-based auth)
+  // Serialize/Deserialize
   passport.serializeUser((user, done) => done(null, user.id));
   passport.deserializeUser(async (id, done) => {
     try {

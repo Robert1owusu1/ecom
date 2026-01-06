@@ -1,7 +1,7 @@
 // routes/authRoutes.js
 import express from 'express';
 import passport from 'passport';
-import { generateToken } from '../config/passPort.js';
+import { generateToken } from '../config/passport.js'; // ✅ Fixed import path
 
 const router = express.Router();
 
@@ -9,17 +9,16 @@ const router = express.Router();
 const handleOAuthSuccess = (req, res) => {
   try {
     const user = req.user;
-    const token = generateToken(user);
     
-    // Set HTTP-only cookie (same as your regular login)
-    res.cookie('jwt', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
-    });
+    if (!user) {
+      console.error('No user found in OAuth callback');
+      return res.redirect(`${process.env.FRONTEND_URL}/login?error=no_user`);
+    }
     
-    // Build user data for frontend (exclude sensitive fields)
+    // ✅ Pass res and user.id (MySQL uses 'id', not '_id')
+    const token = generateToken(res, user.id);
+    
+    // Build user data for frontend
     const userData = {
       id: user.id,
       firstName: user.firstName,
@@ -27,11 +26,11 @@ const handleOAuthSuccess = (req, res) => {
       email: user.email,
       role: user.role,
       isAdmin: user.role === 'admin',
-      isEmailVerified: true, // OAuth users are auto-verified
-      profilePicture: user.profileImage || user.profile_picture
+      isEmailVerified: user.isEmailVerified || 1,
+      profilePicture: user.profileImage || user.profile_picture,
+      token
     };
     
-    // Redirect to frontend with user data in URL (will be parsed by frontend)
     const encodedData = encodeURIComponent(JSON.stringify(userData));
     res.redirect(`${process.env.FRONTEND_URL}/oauth/callback?user=${encodedData}&success=true`);
     
@@ -41,17 +40,7 @@ const handleOAuthSuccess = (req, res) => {
   }
 };
 
-// Helper: Handle OAuth callback failure
-const handleOAuthFailure = (provider) => (req, res) => {
-  console.error(`${provider} OAuth failed`);
-  res.redirect(`${process.env.FRONTEND_URL}/login?error=${provider.toLowerCase()}_failed`);
-};
-
-// ============================================
 // GOOGLE OAUTH ROUTES
-// ============================================
-
-// Initiate Google OAuth
 router.get('/google', 
   passport.authenticate('google', { 
     scope: ['profile', 'email'],
@@ -59,7 +48,6 @@ router.get('/google',
   })
 );
 
-// Google OAuth callback
 router.get('/google/callback',
   passport.authenticate('google', { 
     failureRedirect: `${process.env.FRONTEND_URL}/login?error=google_failed`,
@@ -68,11 +56,7 @@ router.get('/google/callback',
   handleOAuthSuccess
 );
 
-// ============================================
 // FACEBOOK OAUTH ROUTES
-// ============================================
-
-// Initiate Facebook OAuth
 router.get('/facebook',
   passport.authenticate('facebook', { 
     scope: ['email', 'public_profile'],
@@ -80,7 +64,6 @@ router.get('/facebook',
   })
 );
 
-// Facebook OAuth callback
 router.get('/facebook/callback',
   passport.authenticate('facebook', { 
     failureRedirect: `${process.env.FRONTEND_URL}/login?error=facebook_failed`,
@@ -89,12 +72,7 @@ router.get('/facebook/callback',
   handleOAuthSuccess
 );
 
-// ============================================
-// APPLE OAUTH ROUTES (Placeholder)
-// ============================================
-
-// Apple Sign In requires additional setup with Apple Developer account
-// and uses a different flow (Sign in with Apple JS)
+// APPLE OAUTH ROUTES
 router.get('/apple', (req, res) => {
   res.status(501).json({ 
     message: 'Apple Sign In not yet implemented',
@@ -102,18 +80,27 @@ router.get('/apple', (req, res) => {
   });
 });
 
-// ============================================
 // OAUTH STATUS CHECK
-// ============================================
-
 router.get('/status', (req, res) => {
   res.json({
     providers: {
       google: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
       facebook: !!(process.env.FACEBOOK_APP_ID && process.env.FACEBOOK_APP_SECRET),
-      apple: false // Not implemented yet
+      apple: false
     }
   });
+});
+
+// LOGOUT ROUTE
+router.post('/logout', (req, res) => {
+  res.cookie('jwt', '', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    expires: new Date(0)
+  });
+  
+  res.json({ message: 'Logged out successfully' });
 });
 
 export default router;

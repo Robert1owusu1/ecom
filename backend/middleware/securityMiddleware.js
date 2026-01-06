@@ -69,7 +69,12 @@ export const setupSecurity = (app) => {
         scriptSrc: ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", "data:", "https:", "blob:"],
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
-        connectSrc: ["'self'"],
+        connectSrc: [
+          "'self'",
+          "https://*.railway.app",
+          "https://*.vercel.app"
+        ],
+        
       },
     },
     crossOriginEmbedderPolicy: false,

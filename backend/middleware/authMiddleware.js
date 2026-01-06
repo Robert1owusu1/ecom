@@ -1,7 +1,7 @@
-// midleware/authMiddleware.js
+// middleware/authMiddleware.js
 import jwt from 'jsonwebtoken';
-import asyncHandler from './asyncHandller.js';
-import User from '../models/usersModel.js';
+import asyncHandler from './asyncHandler.js'; // ✅ Fixed typo
+import pool from '../config/db.js'; // ✅ Use MySQL pool
 
 /**
  * Protect routes - Verify JWT token from header or cookie
@@ -9,19 +9,18 @@ import User from '../models/usersModel.js';
 const protect = asyncHandler(async (req, res, next) => {
   let token;
 
-  // 1. Try Authorization header first (for API clients)
+  // 1. Try Authorization header first
   if (
     req.headers.authorization &&
     req.headers.authorization.startsWith('Bearer')
   ) {
     token = req.headers.authorization.split(' ')[1];
   }
-  // 2. Fallback to cookie (for browser/local dev)
-  else if (req.cookies.jwt) {
+  // 2. Fallback to cookie
+  else if (req.cookies?.jwt) {
     token = req.cookies.jwt;
   }
 
-  // No token found
   if (!token) {
     res.status(401);
     throw new Error('Not authorized, no token');
@@ -31,30 +30,32 @@ const protect = asyncHandler(async (req, res, next) => {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Get user from database
-    const user = await User.findById(decoded.id);
+    // ✅ Get user from MySQL database
+    const [rows] = await pool.execute(
+      'SELECT id, firstName, lastName, email, role, isActive, isEmailVerified, profileImage FROM users WHERE id = ?',
+      [decoded.id]
+    );
 
-    // Check if user exists
+    const user = rows[0];
+
     if (!user) {
       res.status(401);
       throw new Error('User not found');
     }
 
-    // Check if user is active
     if (!user.isActive) {
       res.status(403);
       throw new Error('Account is deactivated');
     }
 
-    // Attach user profile to request
-    req.user = user.getProfile();
-    
+    // Attach user to request
+    req.user = user;
     next();
+
   } catch (error) {
     console.error('Token verification error:', error.message);
     res.status(401);
     
-    // More specific error messages
     if (error.name === 'JsonWebTokenError') {
       throw new Error('Invalid token');
     } else if (error.name === 'TokenExpiredError') {
