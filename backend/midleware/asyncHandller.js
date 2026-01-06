@@ -1,4 +1,4 @@
-// middleware/asyncHandler.js - COMPLETE VERSION
+// midleware/asyncHandler.js - COMPLETE VERSION
 /**
  * Async Handler - Wraps async route handlers to catch errors
  * This eliminates the need for try-catch blocks in every async function

@@ -1,4 +1,4 @@
-// FILE LOCATION: middleware/cacheMiddleware.js
+// FILE LOCATION: midleware/cacheMiddleware.js
 // DESCRIPTION: Node-cache middleware for API response caching
 
 import NodeCache from 'node-cache';

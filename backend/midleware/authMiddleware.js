@@ -1,6 +1,6 @@
-// middleware/authMiddleware.js
+// midleware/authMiddleware.js
 import jwt from 'jsonwebtoken';
-import asyncHandler from './midleware/asyncHandller.js';
+import asyncHandler from './asyncHandller.js';
 import User from '../models/usersModel.js';
 
 /**
