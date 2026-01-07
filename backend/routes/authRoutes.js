@@ -37,6 +37,7 @@ const handleOAuthSuccess = (req, res) => {
   }
 };
 
+// ✅ FIXED: These routes will be prefixed with /api/auth in server.js
 router.get('/google', 
   passport.authenticate('google', { 
     scope: ['profile', 'email'],

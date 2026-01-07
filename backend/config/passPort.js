@@ -94,7 +94,8 @@ export const configurePassport = () => {
       ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
       : process.env.OAUTH_CALLBACK_URL || 'http://localhost:5000';
     
-    const googleCallbackURL = `${baseURL}/auth/google/callback`;
+    // ✅ FIXED: Added /api prefix to callback URL
+    const googleCallbackURL = `${baseURL}/api/auth/google/callback`;
     
     console.log('🔐 Google OAuth Callback URL:', googleCallbackURL);
 
@@ -121,6 +122,7 @@ export const configurePassport = () => {
       ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
       : process.env.OAUTH_CALLBACK_URL || 'http://localhost:5000';
     
+    // ✅ FIXED: Callback URL already had /api, keeping it consistent
     const facebookCallbackURL = `${baseURL}/api/auth/facebook/callback`;
     
     console.log('🔐 Facebook OAuth Callback URL:', facebookCallbackURL);
